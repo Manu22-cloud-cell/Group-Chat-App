@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Signup | Group Chat App</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h2>Create Account</h2>
+
+        <form id="signupForm">
+            <input type="text" id="name" placeholder="Full Name" required />
+            <input type="email" id="email" placeholder="Email" required />
+            <input type="tel" id="phone" placeholder="Phone Number" required />
+            <input type="password" id="password" placeholder="Password" required />
+
+            <button type="submit">Sign Up</button>
+        </form>
+
+        <p class="link-text">
+            Already have an account? <a href="login.html">Login</a>
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html>
