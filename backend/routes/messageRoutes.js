@@ -1,9 +1,10 @@
-const express=require("express");
-const router=express.Router();
+const express = require("express");
+const router = express.Router();
 
-const authMiddleware=require("../middleware/authMiddleware");
-const messageController=require("../controllers/messageController");
+const authMiddleware = require("../middleware/authMiddleware");
+const messageController = require("../controllers/messageController");
 
-router.post("/send",authMiddleware,messageController.sendMessage);
+router.post("/send", authMiddleware, messageController.sendMessage);
+router.get("/", authMiddleware, messageController.getAllMessages);
 
-module.exports=router;
+module.exports = router;

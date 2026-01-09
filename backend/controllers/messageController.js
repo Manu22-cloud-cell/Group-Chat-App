@@ -1,4 +1,5 @@
 const Message = require("../models/message");
+const User = require("../models/User");
 
 exports.sendMessage = async (req, res) => {
     try {
@@ -23,3 +24,23 @@ exports.sendMessage = async (req, res) => {
         res.status(500).json({ message: "Failed to save message" })
     }
 };
+
+exports.getAllMessages = async (req, res) => {
+    try {
+        const messages = await Message.findAll({
+            include: {
+                model: User,
+                attributes: ["id", "name"],
+            },
+            order: [["createdAt", "ASC"]],
+        });
+
+        res.status(200).json({
+            success: true,
+            data: messages,
+        });
+    } catch (error) {
+        console.error("Fetch messages failed", error);
+        res.status(500).json({ message: "Failed to fetch messages" });
+    }
+}
