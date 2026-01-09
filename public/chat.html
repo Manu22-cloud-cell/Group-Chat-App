@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Group Chat</title>
+    <link rel="stylesheet" href="chat.css" />
+</head>
+
+<body>
+
+    <div class="chat-container">
+
+        <div class="chat-header">
+            <h3>Group Chat</h3>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be injected here -->
+        </div>
+
+        <form class="chat-input" id="chatForm">
+            <input 
+              type="text" 
+              id="messageInput" 
+              placeholder="Type a message..." 
+              autocomplete="off" 
+              required />
+
+            <button type="submit">Send</button>
+        </form>
+
+    </div>
+
+    <script src="chat.js"></script>
+</body>
+</html>
