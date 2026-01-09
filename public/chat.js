@@ -1,3 +1,12 @@
+const API_BASE_URL = "http://localhost:3000";
+
+const token = localStorage.getItem("token");
+
+if (!token) {
+    alert("Please login first");
+    window.location.href = "login.html";
+}
+
 const chatMessages = document.getElementById("chatMessages");
 const chatForm = document.getElementById("chatForm");
 const messageInput = document.getElementById("messageInput");
@@ -29,7 +38,7 @@ function addMessage(text, user, type) {
 }
 
 //SEND MESSAGE
-chatForm.addEventListener("submit", (e) => {
+chatForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const message = messageInput.value.trim();
@@ -37,11 +46,21 @@ chatForm.addEventListener("submit", (e) => {
 
     //Add sent message
     addMessage(message, currentUser, "sent");
-
     messageInput.value = "";
 
-    // Simulate received message (for UI testing)
-    setTimeout(() => {
-        addMessage("Received: " + message, "Friend", "received");
-    }, 1000);
+    try {
+        await axios.post(
+            `${API_BASE_URL}/message/send`,
+            {message},
+            {
+                headers: {
+                    Authorization: "Bearer " +localStorage.getItem("token"),
+                },
+            }
+        )
+    } catch (error) {
+        console.error("Message send failed");
+        alert("Message failed to send");
+    }
+
 });

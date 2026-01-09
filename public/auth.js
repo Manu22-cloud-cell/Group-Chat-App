@@ -14,7 +14,7 @@ if (signupForm) {
 
         try {
             const response = await axios.post(
-                `${API_BASE_URL}/signup`,
+                `${API_BASE_URL}/auth/signup`,
                 {
                     name,
                     email,
@@ -51,7 +51,7 @@ if (loginForm) {
 
         try {
             const response = await axios.post(
-                `${API_BASE_URL}/login`,
+                `${API_BASE_URL}/auth/login`,
                 {
                     loginId,
                     password,
@@ -63,12 +63,12 @@ if (loginForm) {
                 }
             );
 
-            const { token, message } = response.date;
+            const { token, message } = response.data;
 
             if (token) {
                 localStorage.setItem("token", token);
                 alert("Login successful");
-                //redirect to chat page later
+                window.location.href = "chat.html"
             } else {
                 alert(message || "Invalid credentials");
             }

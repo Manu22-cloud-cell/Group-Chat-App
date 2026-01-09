@@ -2,8 +2,11 @@ require("dotenv").config();
 const express=require("express");
 const cors=require("cors");
 
-const sequelize=require("./config/database");
+//import models
+const {sequelize}=require("./models");
+
 const authRoutes=require("./routes/authRoutes");
+const messageRoutes=require("./routes/messageRoutes");
 
 const app=express();
 
@@ -13,7 +16,8 @@ app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 
 //ROUTES
-app.use("/",authRoutes);
+app.use("/auth",authRoutes);
+app.use("/message",messageRoutes);
 
 //DB SYNC & SERVER
 sequelize
