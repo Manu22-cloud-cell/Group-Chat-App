@@ -1,5 +1,6 @@
 const Message = require("../models/message");
 const User = require("../models/User");
+const socket = require("../socket");
 
 exports.sendMessage = async (req, res) => {
     try {
@@ -15,12 +16,27 @@ exports.sendMessage = async (req, res) => {
             UserId: userId,
         });
 
+        // prepare payload
+        const messagePayload = {
+            id: savedMessage.id,
+            message: savedMessage.message,
+            UserId: userId,
+            createdAt: savedMessage.createdAt,
+            User: {
+                id: userId,
+                name: req.user.name,
+            },
+        };
+
+        // emit live message
+        socket.getIO().emit("newMessage", messagePayload);
+
         res.status(201).json({
             success: true,
             message: savedMessage,
         });
     } catch (error) {
-        console.error(error);
+        console.error("Send message failed", error);
         res.status(500).json({ message: "Failed to save message" })
     }
 };

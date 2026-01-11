@@ -36,6 +36,7 @@ if (signupForm) {
                 error.response?.data?.message || "Signup failed, please try again"
             );
         }
+        e.target.reset();
     });
 }
 
@@ -78,5 +79,6 @@ if (loginForm) {
                 error.response?.data?.message || "Login failed, please try again"
             );
         }
+        e.target.reset();
     });
 }
