@@ -16,6 +16,10 @@ exports.sendMessage = async (req, res) => {
             UserId: userId,
         });
 
+        const user = await User.findByPk(userId, {
+            attributes: ["id", "name"],
+        });
+
         // prepare payload
         const messagePayload = {
             id: savedMessage.id,
@@ -24,7 +28,7 @@ exports.sendMessage = async (req, res) => {
             createdAt: savedMessage.createdAt,
             User: {
                 id: userId,
-                name: req.user.name,
+                name: user.name,
             },
         };
 

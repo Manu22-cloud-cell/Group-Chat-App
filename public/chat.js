@@ -25,10 +25,25 @@ if (!loggedInUser) {
 
 const loggedInUserId = loggedInUser.userId;
 
-// socket connection (with token)
 const socket = io(API_BASE_URL, {
-  auth: { token },
+  auth: {
+    token: token, //RAW JWT ONLY
+  },
 });
+
+
+socket.on("connect", () => {
+  console.log("Socket connected:", socket.id);
+});
+
+socket.on("disconnect", (reason) => {
+  console.log("Socket disconnected:", reason);
+});
+
+socket.on("connect_error", (err) => {
+  console.error("Socket auth error:", err.message);
+});
+
 
 const chatMessages = document.getElementById("chatMessages");
 const chatForm = document.getElementById("chatForm");
