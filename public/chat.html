@@ -15,17 +15,17 @@
             <h3>Group Chat</h3>
         </div>
 
+        <div class="chat-search">
+            <input type="email" id="userEmailInput" placeholder="Enter user email to chat" required />
+            <button id="joinChatBtn">Join Chat</button>
+        </div>
+
         <div class="chat-messages" id="chatMessages">
             <!-- Messages will be injected here -->
         </div>
 
         <form class="chat-input" id="chatForm">
-            <input 
-              type="text" 
-              id="messageInput" 
-              placeholder="Type a message..." 
-              autocomplete="off" 
-              required />
+            <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off" required />
 
             <button type="submit">Send</button>
         </form>
@@ -36,4 +36,5 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="chat.js"></script>
 </body>
+
 </html>
