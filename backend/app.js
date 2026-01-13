@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const path = require("path");
 const cors = require("cors");
 const http = require("http");
 
@@ -10,7 +11,7 @@ const { sequelize } = require("./models");
 const authRoutes = require("./routes/authRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 
-const socket = require("./socket");
+const socket = require("./socket-io");
 
 const app = express();
 
@@ -18,6 +19,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+//Serve static files
+app.use(express.static(path.join(__dirname, "..", "public")));
+
+//Defalut route
+app.get("/", (req,res) => {
+  res.sendFile(path.join(__dirname, "..", "public", "login.html"))
+});
 
 //ROUTES
 app.use("/auth", authRoutes);

@@ -1,6 +1,6 @@
 const Message = require("../models/message");
 const User = require("../models/User");
-const socket = require("../socket");
+const socket = require("../socket-io");
 
 exports.sendMessage = async (req, res) => {
     try {
