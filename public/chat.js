@@ -1,12 +1,13 @@
 const API_BASE_URL = "http://localhost:3000";
 
+/* ---------------- AUTH ---------------- */
+
 const token = localStorage.getItem("token");
 if (!token) {
   alert("Please login first");
   window.location.href = "login.html";
 }
 
-// decode JWT safely
 function parseJwt(token) {
   try {
     const base64Payload = token.split(".")[1];
@@ -25,31 +26,33 @@ if (!loggedInUser) {
 
 const loggedInUserId = loggedInUser.userId;
 
-const socket = io(API_BASE_URL, {
-  auth: {
-    token: token, //RAW JWT ONLY
-  },
-});
+/* ---------------- SOCKET ---------------- */
 
+const socket = io(API_BASE_URL, {
+  auth: { token }, // RAW JWT
+});
 
 socket.on("connect", () => {
   console.log("Socket connected:", socket.id);
-});
 
-socket.on("disconnect", (reason) => {
-  console.log("Socket disconnected:", reason);
+  // JOIN PERSONAL ROOM
+  socket.emit("join_room", {
+    userId: loggedInUserId,
+  });
 });
 
 socket.on("connect_error", (err) => {
-  console.error("Socket auth error:", err.message);
+  console.error("Socket connection error:", err.message);
 });
 
+/* ---------------- UI ---------------- */
 
 const chatMessages = document.getElementById("chatMessages");
 const chatForm = document.getElementById("chatForm");
 const messageInput = document.getElementById("messageInput");
 
-// ADD MESSAGE
+/* ---------------- HELPERS ---------------- */
+
 function addMessage(text, user, type, createdAt) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", type);
@@ -69,7 +72,17 @@ function addMessage(text, user, type, createdAt) {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-// SEND MESSAGE (NO UI UPDATE HERE)
+/* ---------------- PERSONAL MESSAGE SEND ---------------- */
+
+function sendPersonalMessage(receiverId, message) {
+  socket.emit("new_message", {
+    receiverId,
+    message,
+  });
+}
+
+/* ---------------- FORM SUBMIT ---------------- */
+
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -78,6 +91,19 @@ chatForm.addEventListener("submit", async (e) => {
 
   messageInput.value = "";
 
+  /**
+   * TEMP:
+   * Replace `2` with selected userId later
+   */
+  const receiverId = 2;
+
+  // SEND VIA SOCKET (PERSONAL)
+  sendPersonalMessage(receiverId, message);
+
+  /**
+   * Keep HTTP for now (group / DB)
+   * Mentor will refactor later
+   */
   try {
     await axios.post(
       `${API_BASE_URL}/message/send`,
@@ -90,11 +116,11 @@ chatForm.addEventListener("submit", async (e) => {
     );
   } catch (error) {
     console.error("Message send failed", error);
-    alert("Message failed to send");
   }
 });
 
-// FETCH OLD MESSAGES
+/* ---------------- FETCH OLD GROUP MESSAGES ---------------- */
+
 async function fetchMessages() {
   try {
     const response = await axios.get(`${API_BASE_URL}/message`, {
@@ -103,10 +129,9 @@ async function fetchMessages() {
       },
     });
 
-    const messages = response.data.data;
     chatMessages.innerHTML = "";
 
-    messages.forEach((msg) => {
+    response.data.data.forEach((msg) => {
       const type = msg.UserId === loggedInUserId ? "sent" : "received";
       addMessage(msg.message, msg.User.name, type, msg.createdAt);
     });
@@ -117,8 +142,22 @@ async function fetchMessages() {
 
 fetchMessages();
 
-// LIVE MESSAGE FROM SOCKET
+/* ---------------- SOCKET LISTENERS ---------------- */
+
+// GROUP CHAT (existing)
 socket.on("newMessage", (msg) => {
   const type = msg.UserId === loggedInUserId ? "sent" : "received";
   addMessage(msg.message, msg.User.name, type, msg.createdAt);
+});
+
+// PERSONAL CHAT (new)
+socket.on("personal_message", (msg) => {
+  const type = msg.sender.id === loggedInUserId ? "sent" : "received";
+
+  addMessage(
+    msg.message,
+    msg.sender.name,
+    type,
+    msg.createdAt
+  );
 });
