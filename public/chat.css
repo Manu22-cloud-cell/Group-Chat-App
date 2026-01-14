@@ -30,6 +30,44 @@ body {
     text-align: center;
 }
 
+/* Chat search (join personal chat) */
+.chat-search {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    background: #f6f6f6;
+    border-bottom: 1px solid #ddd;
+}
+
+.chat-search input {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+    outline: none;
+}
+
+.chat-search input:focus {
+    border-color: #075e54;
+}
+
+.chat-search button {
+    padding: 8px 14px;
+    border: none;
+    background: #075e54;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.chat-search button:hover {
+    background: #064c44;
+}
+
+
 /* Messages */
 .chat-messages {
     flex: 1;

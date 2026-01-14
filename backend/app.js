@@ -10,6 +10,7 @@ const { sequelize } = require("./models");
 //routes
 const authRoutes = require("./routes/authRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const userRoutes=require("./routes/userRoutes");
 
 const socket = require("./socket-io");
 
@@ -31,6 +32,7 @@ app.get("/", (req,res) => {
 //ROUTES
 app.use("/auth", authRoutes);
 app.use("/message", messageRoutes);
+app.use("/users",userRoutes);
 
 //create HTTP server
 const server = http.createServer(app);

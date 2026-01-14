@@ -1,6 +1,7 @@
 const { Server } = require("socket.io");
 const socketMiddleware = require("./middleware");
 const chatHandler = require("./handlers/chat");
+const personalChatHandler=require("./handlers/personalChat");
 
 let io;
 
@@ -17,8 +18,12 @@ function init(server) {
             `User connected: ${socket.user.name} (ID: ${socket.user.userId})`
         );
 
-        // register handlers
+        // register chat handlers
         chatHandler(io, socket);
+
+        // register personal chat handler
+        personalChatHandler(io,socket);
+
 
         socket.on("disconnect", () => {
             console.log(`User disconnected: ${socket.user.name}`);

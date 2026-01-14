@@ -65,7 +65,10 @@ function addMessage(text, user, type, createdAt) {
   div.innerHTML = `
     <div class="user">${user}</div>
     <div class="text">${text}</div>
-    <div class="time">${new Date(createdAt).toLocaleTimeString()}</div>
+    <div class="time">${new Date(createdAt).toLocaleTimeString([],{
+      hour:"2-digit",
+      minute:"2-digit",
+    })}</div>
   `;
 
   chatMessages.appendChild(div);
@@ -74,13 +77,14 @@ function addMessage(text, user, type, createdAt) {
 
 /* ---------------- JOIN ROOM ---------------- */
 
-joinChatBtn.addEventListener("click", async () => {
+joinChatBtn.addEventListener("click", async (e) => {
+  e.preventDefault();
+
   const email = userEmailInput.value.trim();
   if (!email) return alert("Enter user email");
 
   try {
-    // Fetch user by email (backend endpoint assumed)
-    const res = await axios.get(`${API_BASE_URL}/auth/user`, {
+    const res = await axios.get(`${API_BASE_URL}/users/by-email`, {
       params: { email },
       headers: { Authorization: "Bearer " + token },
     });
@@ -99,7 +103,12 @@ joinChatBtn.addEventListener("click", async () => {
 
     socket.emit("join_room", { roomId });
 
+    alert(`Joined room: ${roomId}`);
     console.log("Joined room:", roomId);
+
+    //reset input
+    userEmailInput.value = "";
+
   } catch (err) {
     alert("User not found");
   }
