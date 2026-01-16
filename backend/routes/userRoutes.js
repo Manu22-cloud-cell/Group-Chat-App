@@ -1,8 +1,8 @@
-const express=require("express");
-const router=express.Router();
-const authMiddleware=require("../middleware/authMiddleware");
-const personalChatUser=require("../controllers/userController");
+const express = require("express");
+const router = express.Router();
+const authMiddleware = require("../middleware/authMiddleware");
+const userController = require("../controllers/userController");
 
-router.get("/by-email",authMiddleware,personalChatUser.findUser)
+router.get("/", authMiddleware, userController.getAllUsers);
 
-module.exports=router;
+module.exports = router;

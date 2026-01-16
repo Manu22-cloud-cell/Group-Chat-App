@@ -64,3 +64,16 @@ exports.getAllMessages = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch messages" });
     }
 }
+
+exports.sendGroupMessage = async (req, res) => {
+  const { message, groupId } = req.body;
+  const userId = req.user.userId;
+
+  const saved = await Message.create({
+    message,
+    UserId: userId,
+    GroupId: groupId,
+  });
+
+  res.status(201).json({ message: saved });
+};

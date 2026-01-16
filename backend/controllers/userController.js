@@ -1,26 +1,20 @@
 const User = require("../models/User");
 
-exports.findUser = async (req, res) => {
-    try {
-        const { email } = req.query;
+exports.getAllUsers = async (req, res) => {
+  try {
+    const loggedInUserId = req.user.userId;
 
-        if (!email) {
-            return res.status(400).json({ message: "Email is required" });
-        }
+    const users = await User.findAll({
+      where: {
+        id: { [require("sequelize").Op.ne]: loggedInUserId },
+      },
+      attributes: ["id", "name", "email"],
+      order: [["name", "ASC"]],
+    });
 
-        const user = await User.findOne({
-            where: { email },
-            attributes: ["id", "name", "email"],
-        });
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        res.status(200).json({ user });
-
-    } catch (error) {
-        console.error(err);
-        res.status(500).json({ message: "Failed to fetch user" });
-    }
-}
+    res.status(200).json({ users });
+  } catch (err) {
+    console.error("Fetch users failed:", err);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
+};

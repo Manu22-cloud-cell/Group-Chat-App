@@ -2,39 +2,120 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <title>Group Chat</title>
-    <link rel="stylesheet" href="chat.css" />
+  <meta charset="UTF-8" />
+  <title>SocketChat</title>
+  <link rel="stylesheet" href="chat.css" />
 </head>
 
 <body>
+  <div class="chat-app">
 
-    <div class="chat-container">
+    <!-- LEFT SIDEBAR -->
+    <div class="chat-sidebar">
 
-        <div class="chat-header">
-            <h3>Group Chat</h3>
+      <!-- App Title + Search -->
+      <div class="sidebar-header">
+        <h2 class="app-title">SocketChat</h2>
+        <input type="email" id="searchUserInput" placeholder="Search user by email" />
+      </div>
+
+      <!-- GROUPS SECTION -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-header">
+          <span>Groups</span>
+          <button id="createGroupBtn" title="Create Group">+</button>
         </div>
 
-        <div class="chat-search">
-            <input type="email" id="userEmailInput" placeholder="Enter user email to chat" required />
-            <button id="joinChatBtn">Join Chat</button>
+        <div class="sidebar-users" id="groupList">
+          <!-- groups rendered here -->
+        </div>
+      </div>
+
+      <!-- PERSONAL CHATS SECTION -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-header">
+          <span>Chats</span>
         </div>
 
-        <div class="chat-messages" id="chatMessages">
-            <!-- Messages will be injected here -->
+        <div class="sidebar-users" id="userList">
+          <!-- users rendered here -->
         </div>
-
-        <form class="chat-input" id="chatForm">
-            <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off" required />
-
-            <button type="submit">Send</button>
-        </form>
+      </div>
 
     </div>
 
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="chat.js"></script>
+    <!-- MAIN CHAT CONTAINER -->
+    <div class="chat-container">
+
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <h3 id="chatHeaderTitle">Chat</h3>
+
+        <!-- ADD MEMBER BUTTON (GROUP ONLY) -->
+        <button id="addMemberBtn" class="add-member-btn hidden" title="Add member">
+          +
+        </button>
+      </div>
+
+      <!-- Chat Status -->
+      <div class="chat-status" id="chatStatus">
+        Not chatting with anyone
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages" id="chatMessages"></div>
+
+      <!-- Message Input -->
+      <form class="chat-input" id="chatForm">
+        <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off" required />
+        <button type="submit">Send</button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ADD MEMBER MODAL -->
+  <div id="addMemberModal" class="modal hidden">
+    <div class="modal-content">
+      <h4>Add Members</h4>
+      <div id="memberUserList"></div>
+      <button id="closeModalBtn">Close</button>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="chat.js"></script>
+
+  <!-- CREATE GROUP -->
+  <script>
+    document
+      .getElementById("createGroupBtn")
+      .addEventListener("click", async () => {
+        const groupName = prompt("Enter group name");
+        if (!groupName) return;
+
+        try {
+          await axios.post(
+            "http://localhost:3000/groups/create",
+            { name: groupName },
+            {
+              headers: {
+                Authorization: "Bearer " + localStorage.getItem("token"),
+              },
+            }
+          );
+
+          if (typeof fetchGroups === "function") {
+            fetchGroups();
+          }
+        } catch (err) {
+          alert("Failed to create group");
+          console.error(err);
+        }
+      });
+  </script>
 </body>
 
 </html>
