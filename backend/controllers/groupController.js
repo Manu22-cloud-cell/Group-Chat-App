@@ -101,7 +101,7 @@ exports.getGroupDetails = async (req, res) => {
                 {
                     model: User,
                     attributes: ["id", "name", "email"],
-                    through: { attributes: [] }
+                    through: { attributes: ["isAdmin"] }
                 }
             ]
         });

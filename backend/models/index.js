@@ -1,21 +1,38 @@
-const sequelize = require("../config/database");
+const sequelize = require("../config/sequelize");
+
 
 const User = require("./User");
-const Message = require("./message");
 const Group = require("./Group");
 const GroupMember = require("./GroupMember");
+const PrivateMessage = require("./PrivateMessage");
+const GroupMessage = require("./GroupMessage");
 
-/* ========================= */
-/* MESSAGE ASSOCIATIONS */
-/* ========================= */
+// PRIVATE CHAT ASSOCIATIONS
+   
+// Sender
+User.hasMany(PrivateMessage, {
+  foreignKey: "senderId",
+  as: "SentMessages",
+});
 
-User.hasMany(Message, { foreignKey: "UserId" });
-Message.belongsTo(User, { foreignKey: "UserId" });
+PrivateMessage.belongsTo(User, {
+  foreignKey: "senderId",
+  as: "Sender",
+});
 
-/* ========================= */
-/* GROUP ASSOCIATIONS */
-/* ========================= */
+// Receiver
+User.hasMany(PrivateMessage, {
+  foreignKey: "receiverId",
+  as: "ReceivedMessages",
+});
 
+PrivateMessage.belongsTo(User, {
+  foreignKey: "receiverId",
+  as: "Receiver",
+});
+
+// GROUP & MEMBERS ASSOCIATIONS
+  
 // Group ↔ GroupMember
 Group.hasMany(GroupMember, { foreignKey: "groupId" });
 GroupMember.belongsTo(Group, { foreignKey: "groupId" });
@@ -24,25 +41,32 @@ GroupMember.belongsTo(Group, { foreignKey: "groupId" });
 User.hasMany(GroupMember, { foreignKey: "userId" });
 GroupMember.belongsTo(User, { foreignKey: "userId" });
 
-// Many-to-Many
+// Many-to-Many (Users ↔ Groups)
 User.belongsToMany(Group, {
-    through: GroupMember,
-    foreignKey: "userId"
+  through: GroupMember,
+  foreignKey: "userId",
 });
 
 Group.belongsToMany(User, {
-    through: GroupMember,
-    foreignKey: "groupId"
+  through: GroupMember,
+  foreignKey: "groupId",
 });
 
-/* ========================= */
-/* EXPORT EVERYTHING */
-/* ========================= */
+/* GROUP MESSAGE ASSOCIATIONS */
+
+Group.hasMany(GroupMessage, { foreignKey: "groupId" });
+GroupMessage.belongsTo(Group, { foreignKey: "groupId" });
+
+User.hasMany(GroupMessage, { foreignKey: "senderId" });
+GroupMessage.belongsTo(User, { foreignKey: "senderId" });
+
+/* EXPORTS */
 
 module.exports = {
-    sequelize,
-    User,
-    Message,
-    Group,
-    GroupMember
+  sequelize,
+  User,
+  Group,
+  GroupMember,
+  PrivateMessage,
+  GroupMessage,
 };

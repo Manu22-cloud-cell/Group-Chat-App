@@ -26,9 +26,7 @@
           <button id="createGroupBtn" title="Create Group">+</button>
         </div>
 
-        <div class="sidebar-users" id="groupList">
-          <!-- groups rendered here -->
-        </div>
+        <div class="sidebar-users" id="groupList"></div>
       </div>
 
       <!-- PERSONAL CHATS SECTION -->
@@ -37,37 +35,32 @@
           <span>Chats</span>
         </div>
 
-        <div class="sidebar-users" id="userList">
-          <!-- users rendered here -->
-        </div>
+        <div class="sidebar-users" id="userList"></div>
       </div>
 
     </div>
 
-    <!-- MAIN CHAT CONTAINER -->
+    <!-- MAIN CHAT -->
     <div class="chat-container">
 
-      <!-- Chat Header -->
       <div class="chat-header">
         <h3 id="chatHeaderTitle">Chat</h3>
-
-        <!-- ADD MEMBER BUTTON (GROUP ONLY) -->
-        <button id="addMemberBtn" class="add-member-btn hidden" title="Add member">
-          +
-        </button>
+        <button id="addMemberBtn" class="add-member-btn hidden">+</button>
       </div>
 
-      <!-- Chat Status -->
       <div class="chat-status" id="chatStatus">
         Not chatting with anyone
       </div>
 
-      <!-- Messages -->
       <div class="chat-messages" id="chatMessages"></div>
 
-      <!-- Message Input -->
       <form class="chat-input" id="chatForm">
-        <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off" required />
+        <label for="mediaInput" class="media-btn" title="Attach media">
+          📎
+        </label>
+        <input type="file" id="mediaInput" accept="image/*,video/*" hidden />
+
+        <input type="text" id="messageInput" placeholder="Type a message..." />
         <button type="submit">Send</button>
       </form>
 
@@ -78,44 +71,18 @@
   <div id="addMemberModal" class="modal hidden">
     <div class="modal-content">
       <h4>Add Members</h4>
+
+      <input type="text" id="memberSearchInput" placeholder="Search users..." />
+
       <div id="memberUserList"></div>
+
       <button id="closeModalBtn">Close</button>
     </div>
   </div>
 
-  <!-- SCRIPTS -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="chat.js"></script>
-
-  <!-- CREATE GROUP -->
-  <script>
-    document
-      .getElementById("createGroupBtn")
-      .addEventListener("click", async () => {
-        const groupName = prompt("Enter group name");
-        if (!groupName) return;
-
-        try {
-          await axios.post(
-            "http://localhost:3000/groups/create",
-            { name: groupName },
-            {
-              headers: {
-                Authorization: "Bearer " + localStorage.getItem("token"),
-              },
-            }
-          );
-
-          if (typeof fetchGroups === "function") {
-            fetchGroups();
-          }
-        } catch (err) {
-          alert("Failed to create group");
-          console.error(err);
-        }
-      });
-  </script>
 </body>
 
 </html>

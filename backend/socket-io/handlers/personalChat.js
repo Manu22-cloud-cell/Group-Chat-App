@@ -1,47 +1,45 @@
+const { PrivateMessage } = require("../../models");
+
 module.exports = (io, socket) => {
-  /**
-   * JOIN A PERSONAL ROOM
-   */
-  socket.on("join_room", ({ roomId }) => {
-    if (!roomId) return;
 
+  socket.on("join_private", ({ roomId }) => {
     socket.join(roomId);
-
-    console.log(
-      `User ${socket.user.userId} joined room ${roomId}`
-    );
+    console.log(`User ${socket.user.userId} joined ${roomId}`);
   });
 
-  /**
-   * LEAVE A PERSONAL ROOM
-   */
-  socket.on("leave_room", ({ roomId }) => {
-    if (!roomId) return;
-
+  socket.on("leave_private", ({ roomId }) => {
     socket.leave(roomId);
-
-    console.log(
-      `User ${socket.user.userId} left room ${roomId}`
-    );
   });
 
-  /**
-   * SEND PERSONAL MESSAGE
-   */
-  socket.on("new_message", ({ roomId, message }) => {
-    if (!roomId || !message) return;
+  socket.on(
+    "send_private_message",
+    async ({ roomId, receiverId, message, mediaUrl, mediaType }) => {
 
-    const payload = {
-      message,
-      roomId,
-      sender: {
-        id: socket.user.userId,
-        name: socket.user.name,
-      },
-      createdAt: new Date(),
-    };
+      if (!roomId || !receiverId) return;
+      if (!message && !mediaUrl) return;
 
-    // emit ONLY to that room
-    io.to(roomId).emit("new_message", payload);
-  });
+      const savedMsg = await PrivateMessage.create({
+        roomId,
+        senderId: socket.user.userId,
+        receiverId,
+        message: message || null,
+        mediaUrl: mediaUrl || null,
+        mediaType: mediaType || null
+      });
+
+      const payload = {
+        id: savedMsg.id,
+        roomId,
+        senderId: socket.user.userId,
+        senderName: socket.user.name,
+        message: savedMsg.message,
+        mediaUrl: savedMsg.mediaUrl,
+        mediaType: savedMsg.mediaType,
+        type: mediaUrl ? "media" : "text",
+        createdAt: savedMsg.createdAt
+      };
+
+      socket.to(roomId).emit("private_message", payload);
+    }
+  );
 };

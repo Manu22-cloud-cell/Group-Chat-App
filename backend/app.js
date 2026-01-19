@@ -4,53 +4,59 @@ const path = require("path");
 const cors = require("cors");
 const http = require("http");
 
-// import sequelize
+const app = express();
+
+/* ---------- IMPORT MODELS (IMPORTANT) ---------- */
 const { sequelize } = require("./models");
 
-//routes
+/* ---------- ROUTES ---------- */
 const authRoutes = require("./routes/authRoutes");
 const messageRoutes = require("./routes/messageRoutes");
-const userRoutes=require("./routes/userRoutes");
-const groupRoutes=require("./routes/groupRoutes");
+const userRoutes = require("./routes/userRoutes");
+const groupRoutes = require("./routes/groupRoutes");
+const mediaRoutes=require("./routes/mediaRoutes");
 
 const socket = require("./socket-io");
 
-const app = express();
-
-//MIDDLEWARE
+/* ---------- MIDDLEWARE ---------- */
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//Serve static files
+/* ---------- STATIC FILES ---------- */
 app.use(express.static(path.join(__dirname, "..", "public")));
 
-//Defalut route
-app.get("/", (req,res) => {
-  res.sendFile(path.join(__dirname, "..", "public", "login.html"))
+/* ---------- ROUTES ---------- */
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "public", "login.html"));
 });
 
-//ROUTES
 app.use("/auth", authRoutes);
-app.use("/message", messageRoutes);
-app.use("/users",userRoutes);
-app.use("/groups",groupRoutes);
+app.use("/messages", messageRoutes);
+app.use("/users", userRoutes);
+app.use("/groups", groupRoutes);
+app.use("/media",mediaRoutes);
 
-//create HTTP server
+/* ---------- SERVER ---------- */
 const server = http.createServer(app);
-
-// initialize socket.io
 socket.init(server);
 
-//DB SYNC & SERVER START
-sequelize
-  .sync()
-  .then(() => {
+/* ---------- DB SYNC + START ---------- */
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log("Database connected successfully");
+
+    // Drop & recreate tables
+    await sequelize.sync();
+
     console.log("Database synced");
+
     const PORT = process.env.PORT || 3000;
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
-  })
-  .catch((err) => console.error("DB sync failed:", err));
-
+  } catch (error) {
+    console.error("DB sync failed:", error);
+  }
+})();

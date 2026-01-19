@@ -235,32 +235,69 @@ body {
 
 .chat-input {
   display: flex;
+  align-items: center;
   padding: 10px;
   background: #f0f0f0;
   border-top: 1px solid #ddd;
+  gap: 8px;
 }
 
-.chat-input input {
+/* TEXT INPUT */
+.chat-input input[type="text"] {
   flex: 1;
-  padding: 10px;
+  padding: 10px 14px;
   border-radius: 20px;
   border: 1px solid #ccc;
   outline: none;
+  font-size: 14px;
 }
 
+/* MEDIA BUTTON (file input replacement) */
+.media-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.2s ease, border 0.2s ease;
+}
+
+.media-btn:hover {
+  background: #e6f2ef;
+  border-color: #075e54;
+}
+
+/* SEND BUTTON */
 .chat-input button {
-  margin-left: 10px;
-  padding: 0 20px;
+  padding: 0 18px;
+  height: 40px;
   border-radius: 20px;
   border: none;
   background: #075e54;
   color: #fff;
   cursor: pointer;
+  font-size: 14px;
 }
 
 .chat-input button:hover {
   background: #064c45;
 }
+
+/* MEDIA INSIDE CHAT */
+.chat-media {
+  max-width: 250px;
+  max-height: 250px;
+  border-radius: 8px;
+  margin-top: 5px;
+  display: block;
+}
+
+
 
 /* ---------------- MODAL ---------------- */
 

@@ -1,79 +1,120 @@
-const Message = require("../models/message");
-const User = require("../models/User");
-const socket = require("../socket-io");
+const { PrivateMessage, GroupMessage, User } = require("../models");
 
-exports.sendMessage = async (req, res) => {
-    try {
-        const { message } = req.body;
-        const userId = req.user.userId;
 
-        if (!message) {
-            return res.status(400).json({ message: "Message is required" });
-        }
+// PRIVATE CHAT
 
-        const savedMessage = await Message.create({
-            message,
-            UserId: userId,
-        });
+exports.sendPrivateMessage = async (req, res) => {
+  try {
+    const { receiverId, message } = req.body;
+    const senderId = req.user.userId;
 
-        const user = await User.findByPk(userId, {
-            attributes: ["id", "name"],
-        });
-
-        // prepare payload
-        const messagePayload = {
-            id: savedMessage.id,
-            message: savedMessage.message,
-            UserId: userId,
-            createdAt: savedMessage.createdAt,
-            User: {
-                id: userId,
-                name: user.name,
-            },
-        };
-
-        // emit live message
-        socket.getIO().emit("newMessage", messagePayload);
-
-        res.status(201).json({
-            success: true,
-            message: savedMessage,
-        });
-    } catch (error) {
-        console.error("Send message failed", error);
-        res.status(500).json({ message: "Failed to save message" })
+    if (!receiverId || !message) {
+      return res.status(400).json({ message: "Invalid data" });
     }
+
+    const roomId =
+      senderId < receiverId
+        ? `private_${senderId}_${receiverId}`
+        : `private_${receiverId}_${senderId}`;
+
+    const savedMessage = await PrivateMessage.create({
+      senderId,
+      receiverId,
+      roomId,
+      message,
+    });
+
+    res.status(201).json({
+      roomId,
+      senderId,
+      senderName: req.user.name,
+      message,
+      createdAt: savedMessage.createdAt,
+    });
+  } catch (error) {
+    console.error("Private message failed", error);
+    res.status(500).json({ message: "Failed to send private message" });
+  }
 };
 
-exports.getAllMessages = async (req, res) => {
-    try {
-        const messages = await Message.findAll({
-            include: {
-                model: User,
-                attributes: ["id", "name"],
-            },
-            order: [["createdAt", "ASC"]],
-        });
 
-        res.status(200).json({
-            success: true,
-            data: messages,
-        });
-    } catch (error) {
-        console.error("Fetch messages failed", error);
-        res.status(500).json({ message: "Failed to fetch messages" });
-    }
-}
+
+exports.getPrivateMessages = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const otherUserId = req.params.userId;
+
+    const messages = await PrivateMessage.findAll({
+      where: {
+        [require("sequelize").Op.or]: [
+          { senderId: userId, receiverId: otherUserId },
+          { senderId: otherUserId, receiverId: userId },
+        ],
+      },
+      include: [
+        { model: User, as: "Sender", attributes: ["id", "name"] },
+        { model: User, as: "Receiver", attributes: ["id", "name"] },
+      ],
+      order: [["createdAt", "ASC"]],
+    });
+
+    res.status(200).json({ messages });
+  } catch (err) {
+    console.error("Fetch private messages failed", err);
+    res.status(500).json({ message: "Failed to fetch messages" });
+  }
+};
+
+
+// GROUP CHAT
 
 exports.sendGroupMessage = async (req, res) => {
-  const { message, groupId } = req.body;
-  const userId = req.user.userId;
+  try {
+    const { message, groupId } = req.body;
+    const senderId = req.user.userId;
 
-  const saved = await Message.create({
-    message,
-    UserId: userId,
-    GroupId: groupId,
-  });
+    if (!message || !groupId) {
+      return res.status(400).json({ message: "Invalid data" });
+    }
 
-  res.status(201).json({ message: saved });
+    const savedMessage = await GroupMessage.create({
+      message,
+      groupId,
+      senderId,
+    });
+
+    res.status(201).json({
+      groupId,
+      senderId,
+      senderName: req.user.name,
+      message,
+      createdAt: savedMessage.createdAt,
+    });
+  } catch (err) {
+    console.error("Group message failed", err);
+    res.status(500).json({ message: "Failed to send message" });
+  }
+};
+
+
+exports.getGroupMessages = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+
+    const messages = await GroupMessage.findAll({
+      where: { groupId },
+      include: [
+        {
+          model: User,
+          attributes: ["id", "name"],
+        },
+      ],
+      order: [["createdAt", "ASC"]],
+    });
+
+    res.status(200).json({ messages });
+  } catch (err) {
+    console.error("Fetch group messages failed", err);
+    res.status(500).json({ message: "Failed to fetch messages" });
+  }
 };
