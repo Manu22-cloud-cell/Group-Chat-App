@@ -6,6 +6,10 @@ const Group = require("./Group");
 const GroupMember = require("./GroupMember");
 const PrivateMessage = require("./PrivateMessage");
 const GroupMessage = require("./GroupMessage");
+const ArchivedPrivateMessage = require("./ArchivedPrivateMessage");
+const ArchivedGroupMessage = require("./ArchivedGroupMessage");
+
+
 
 // PRIVATE CHAT ASSOCIATIONS
    
@@ -68,5 +72,7 @@ module.exports = {
   Group,
   GroupMember,
   PrivateMessage,
+  ArchivedPrivateMessage,
   GroupMessage,
+  ArchivedGroupMessage,
 };

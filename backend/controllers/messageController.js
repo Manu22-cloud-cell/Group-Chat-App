@@ -1,4 +1,5 @@
-const { PrivateMessage, GroupMessage, User } = require("../models");
+const { PrivateMessage, GroupMessage, User, ArchivedPrivateMessage, ArchivedGroupMessage } = require("../models");
+const {Op}=require("sequelize");
 
 
 // PRIVATE CHAT
@@ -37,8 +38,6 @@ exports.sendPrivateMessage = async (req, res) => {
   }
 };
 
-
-
 exports.getPrivateMessages = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -65,6 +64,52 @@ exports.getPrivateMessages = async (req, res) => {
   }
 };
 
+//load Older Private messages
+
+exports.loadOlderPrivateMessages = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const otherUserId = req.params.userId;
+    const { before } = req.query; // timestamp
+    const limit = 20;
+
+    const whereCondition = {
+      [Op.or]: [
+        { senderId: userId, receiverId: otherUserId },
+        { senderId: otherUserId, receiverId: userId },
+      ],
+      createdAt: { [Op.lt]: new Date(before) },
+    };
+
+    // Try hot table first
+    let messages = await PrivateMessage.findAll({
+      where: whereCondition,
+      order: [["createdAt", "DESC"]],
+      limit,
+    });
+
+    // If not enough → pull from archive
+    if (messages.length < limit) {
+      const remaining = limit - messages.length;
+
+      const archived = await ArchivedPrivateMessage.findAll({
+        where: whereCondition,
+        order: [["createdAt", "DESC"]],
+        limit: remaining,
+      });
+
+      messages = [...messages, ...archived];
+    }
+
+    res.status(200).json({
+      messages: messages.reverse(), // oldest → newest
+      hasMore: messages.length === limit,
+    });
+  } catch (err) {
+    console.error("Load older private messages failed", err);
+    res.status(500).json({ message: "Failed to load messages" });
+  }
+};
 
 // GROUP CHAT
 
@@ -116,5 +161,45 @@ exports.getGroupMessages = async (req, res) => {
   } catch (err) {
     console.error("Fetch group messages failed", err);
     res.status(500).json({ message: "Failed to fetch messages" });
+  }
+};
+
+exports.loadOlderGroupMessages = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { before } = req.query;
+    const limit = 20;
+
+    let messages = await GroupMessage.findAll({
+      where: {
+        groupId,
+        createdAt: { [Op.lt]: new Date(before) },
+      },
+      order: [["createdAt", "DESC"]],
+      limit,
+    });
+
+    if (messages.length < limit) {
+      const remaining = limit - messages.length;
+
+      const archived = await ArchivedGroupMessage.findAll({
+        where: {
+          groupId,
+          createdAt: { [Op.lt]: new Date(before) },
+        },
+        order: [["createdAt", "DESC"]],
+        limit: remaining,
+      });
+
+      messages = [...messages, ...archived];
+    }
+
+    res.status(200).json({
+      messages: messages.reverse(),
+      hasMore: messages.length === limit,
+    });
+  } catch (err) {
+    console.error("Load older group messages failed", err);
+    res.status(500).json({ message: "Failed to load messages" });
   }
 };

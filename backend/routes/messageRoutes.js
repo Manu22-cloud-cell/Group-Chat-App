@@ -17,6 +17,12 @@ router.get(
   messageController.getPrivateMessages
 );
 
+router.get(
+  "/private/:userId/older",
+  authMiddleware,
+  messageController.loadOlderPrivateMessages
+);
+
 /* GROUP CHAT */
 router.post(
   "/group/send",
@@ -28,6 +34,12 @@ router.get(
   "/group/:groupId",
   authMiddleware,
   messageController.getGroupMessages
+);
+
+router.get(
+  "/group/:groupId/older",
+  authMiddleware,
+  messageController.loadOlderGroupMessages
 );
 
 module.exports = router;

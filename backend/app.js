@@ -1,4 +1,6 @@
 require("dotenv").config();
+require("./cron/archiveJob");
+
 const express = require("express");
 const path = require("path");
 const cors = require("cors");

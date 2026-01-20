@@ -68,6 +68,11 @@ let recentChats = new Map();
 let groups = [];
 let availableGroupUsers = [];
 
+let oldestMessageTime = null;
+let hasMoreMessages = true;
+let isLoadingOlderMessages = false;
+
+
 /* ---------------- HELPERS ---------------- */
 
 function generatePrivateRoomId(id1, id2) {
@@ -82,7 +87,8 @@ function addMessage(
   createdAt,
   showSender = true,
   mediaUrl = null,
-  mediaType = null
+  mediaType = null,
+  prepend = false
 ) {
   const div = document.createElement("div");
   div.classList.add("message", type);
@@ -111,14 +117,18 @@ function addMessage(
     ${content}
     <div class="time">
       ${new Date(createdAt).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  })}
+        hour: "2-digit",
+        minute: "2-digit",
+      })}
     </div>
   `;
 
-  chatMessages.appendChild(div);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  if (prepend) {
+    chatMessages.prepend(div);
+  } else {
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
 }
 
 /* ---------------- USERS ---------------- */
@@ -364,11 +374,16 @@ function leaveCurrentChat() {
   currentReceiver = null;
   currentGroupId = null;
 
+  oldestMessageTime = null;
+  hasMoreMessages = true;
+  isLoadingOlderMessages = false;
+
   chatMessages.innerHTML = "";
   chatStatus.textContent = "Not chatting with anyone";
   chatStatus.classList.remove("hidden");
   addMemberModal.classList.add("hidden");
 }
+
 
 // UPLOAD MEDIA FUNCTION
 
@@ -448,7 +463,11 @@ async function loadPrivateMessages(userId) {
   );
 
   chatMessages.innerHTML = "";
-  res.data.messages.forEach(msg => {
+  hasMoreMessages = true;
+
+  const messages = res.data.messages;
+
+  messages.forEach(msg => {
     addMessage(
       msg.message,
       msg.Sender.name,
@@ -459,6 +478,10 @@ async function loadPrivateMessages(userId) {
       msg.mediaType
     );
   });
+
+  if (messages.length > 0) {
+    oldestMessageTime = messages[0].createdAt;
+  }
 }
 
 async function loadGroupMessages(groupId) {
@@ -468,7 +491,11 @@ async function loadGroupMessages(groupId) {
   );
 
   chatMessages.innerHTML = "";
-  res.data.messages.forEach(msg => {
+  hasMoreMessages = true;
+
+  const messages = res.data.messages;
+
+  messages.forEach(msg => {
     addMessage(
       msg.message,
       msg.User.name,
@@ -479,7 +506,96 @@ async function loadGroupMessages(groupId) {
       msg.mediaType
     );
   });
+
+  if (messages.length > 0) {
+    oldestMessageTime = messages[0].createdAt;
+  }
 }
+
+async function loadOlderPrivateMessages() {
+  if (!hasMoreMessages || isLoadingOlderMessages || !oldestMessageTime) return;
+
+  isLoadingOlderMessages = true;
+
+  const res = await axios.get(
+    `${API_BASE_URL}/messages/private/${currentReceiver.id}/older`,
+    {
+      headers: { Authorization: "Bearer " + token },
+      params: { before: oldestMessageTime }
+    }
+  );
+
+  const messages = res.data.messages;
+
+  messages.forEach(msg => {
+    addMessage(
+      msg.message,
+      msg.Sender?.name || "Unknown",
+      msg.senderId === loggedInUserId ? "sent" : "received",
+      msg.createdAt,
+      true,
+      msg.mediaUrl,
+      msg.mediaType,
+      true // PREPEND
+    );
+  });
+
+  if (messages.length > 0) {
+    oldestMessageTime = messages[0].createdAt;
+  }
+
+  hasMoreMessages = res.data.hasMore;
+  isLoadingOlderMessages = false;
+}
+
+async function loadOlderGroupMessages() {
+  if (!hasMoreMessages || isLoadingOlderMessages || !oldestMessageTime) return;
+
+  isLoadingOlderMessages = true;
+
+  const res = await axios.get(
+    `${API_BASE_URL}/messages/group/${currentGroupId}/older`,
+    {
+      headers: { Authorization: "Bearer " + token },
+      params: { before: oldestMessageTime }
+    }
+  );
+
+  const messages = res.data.messages;
+
+  messages.forEach(msg => {
+    addMessage(
+      msg.message,
+      msg.User?.name || "Unknown",
+      msg.senderId === loggedInUserId ? "sent" : "received",
+      msg.createdAt,
+      true,
+      msg.mediaUrl,
+      msg.mediaType,
+      true
+    );
+  });
+
+  if (messages.length > 0) {
+    oldestMessageTime = messages[0].createdAt;
+  }
+
+  hasMoreMessages = res.data.hasMore;
+  isLoadingOlderMessages = false;
+}
+
+
+// Scroll listener(inifinite scroll)
+
+chatMessages.addEventListener("scroll", () => {
+  if (chatMessages.scrollTop === 0) {
+    if (currentGroupId) {
+      loadOlderGroupMessages();
+    } else if (currentReceiver) {
+      loadOlderPrivateMessages();
+    }
+  }
+});
 
 /* ---------------- SOCKET RECEIVE ---------------- */
 
