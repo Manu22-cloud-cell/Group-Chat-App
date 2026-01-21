@@ -47,6 +47,8 @@ const memberUserList = document.getElementById("memberUserList");
 const closeModalBtn = document.getElementById("closeModalBtn");
 const memberSearchInput = document.getElementById("memberSearchInput");
 const mediaInput = document.getElementById("mediaInput");
+const aiSuggestions = document.getElementById("aiSuggestions");
+const smartReplies = document.getElementById("smartReplies");
 
 /* -------- MEDIA INPUT UX -------- */
 mediaInput.addEventListener("change", () => {
@@ -71,6 +73,8 @@ let availableGroupUsers = [];
 let oldestMessageTime = null;
 let hasMoreMessages = true;
 let isLoadingOlderMessages = false;
+
+let typingTimeout;
 
 
 /* ---------------- HELPERS ---------------- */
@@ -117,9 +121,9 @@ function addMessage(
     ${content}
     <div class="time">
       ${new Date(createdAt).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}
+    hour: "2-digit",
+    minute: "2-digit",
+  })}
     </div>
   `;
 
@@ -130,6 +134,77 @@ function addMessage(
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 }
+
+/* ai smart suggestions */
+
+messageInput.addEventListener("input", () => {
+  clearTimeout(typingTimeout);
+
+  const text = messageInput.value.trim();
+  if (text.length < 3) {
+    aiSuggestions.classList.add("hidden");
+    return;
+  }
+
+  typingTimeout = setTimeout(async () => {
+    const res = await axios.post(
+      `${API_BASE_URL}/ai/predict`,
+      { text, userStyle: "casual" },
+      { headers: { Authorization: "Bearer " + token } }
+    );
+
+    renderPredictions(res.data.suggestions);
+  }, 400);
+});
+
+function renderPredictions(suggestions) {
+  aiSuggestions.innerHTML = "";
+
+  if (!suggestions.length) {
+    aiSuggestions.classList.add("hidden");
+    return;
+  }
+
+  suggestions.forEach(s => {
+    const span = document.createElement("span");
+    span.textContent = s;
+    span.onclick = () => {
+      messageInput.value += " " + s;
+      aiSuggestions.classList.add("hidden");
+      messageInput.focus();
+    };
+    aiSuggestions.appendChild(span);
+  });
+
+  aiSuggestions.classList.remove("hidden");
+}
+
+//Smart replies
+
+async function showSmartReplies(message) {
+  const res = await axios.post(
+    `${API_BASE_URL}/ai/smart-reply`,
+    { message, userStyle: "casual" },
+    { headers: { Authorization: "Bearer " + token } }
+  );
+
+  const replies = res.data.replies;
+  smartReplies.innerHTML = "";
+
+  replies.forEach(r => {
+    const btn = document.createElement("span");
+    btn.textContent = r;
+    btn.onclick = () => {
+      messageInput.value = r;
+      smartReplies.classList.add("hidden");
+      messageInput.focus();
+    };
+    smartReplies.appendChild(btn);
+  });
+
+  smartReplies.classList.remove("hidden");
+}
+
 
 /* ---------------- USERS ---------------- */
 
@@ -610,6 +685,9 @@ socket.on("private_message", msg => {
       msg.mediaUrl,
       msg.mediaType
     );
+
+    showSmartReplies(msg.message);
+
   }
 });
 
@@ -624,6 +702,9 @@ socket.on("group_message", msg => {
       msg.mediaUrl,
       msg.mediaType
     );
+
+    showSmartReplies(msg.message);
+
   }
 });
 

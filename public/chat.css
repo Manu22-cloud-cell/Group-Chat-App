@@ -297,7 +297,28 @@ body {
   display: block;
 }
 
+/* AI SUGESSTIONS */
 
+.ai-suggestions {
+  display: flex;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #f7f7f7;
+  border-radius: 12px;
+  margin-bottom: 6px;
+}
+
+.ai-suggestions span {
+  background: #e0f2f1;
+  padding: 6px 10px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.ai-suggestions span:hover {
+  background: #b2dfdb;
+}
 
 /* ---------------- MODAL ---------------- */
 

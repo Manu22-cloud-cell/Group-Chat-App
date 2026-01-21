@@ -17,6 +17,7 @@ const messageRoutes = require("./routes/messageRoutes");
 const userRoutes = require("./routes/userRoutes");
 const groupRoutes = require("./routes/groupRoutes");
 const mediaRoutes=require("./routes/mediaRoutes");
+const aiRoutes=require("./routes/aiRoutes");
 
 const socket = require("./socket-io");
 
@@ -38,6 +39,7 @@ app.use("/messages", messageRoutes);
 app.use("/users", userRoutes);
 app.use("/groups", groupRoutes);
 app.use("/media",mediaRoutes);
+app.use("/ai",aiRoutes);
 
 /* ---------- SERVER ---------- */
 const server = http.createServer(app);
