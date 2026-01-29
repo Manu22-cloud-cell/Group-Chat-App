@@ -1,5 +1,5 @@
 const { PrivateMessage, GroupMessage, User, ArchivedPrivateMessage, ArchivedGroupMessage } = require("../models");
-const {Op}=require("sequelize");
+const { Op } = require("sequelize");
 
 
 // PRIVATE CHAT
@@ -23,6 +23,7 @@ exports.sendPrivateMessage = async (req, res) => {
       receiverId,
       roomId,
       message,
+      status: "sent"
     });
 
     res.status(201).json({
@@ -30,6 +31,7 @@ exports.sendPrivateMessage = async (req, res) => {
       senderId,
       senderName: req.user.name,
       message,
+      status: savedMessage.status,
       createdAt: savedMessage.createdAt,
     });
   } catch (error) {
@@ -45,11 +47,21 @@ exports.getPrivateMessages = async (req, res) => {
 
     const messages = await PrivateMessage.findAll({
       where: {
-        [require("sequelize").Op.or]: [
+        [Op.or]: [
           { senderId: userId, receiverId: otherUserId },
           { senderId: otherUserId, receiverId: userId },
         ],
       },
+      attributes: [
+        "id",
+        "message",
+        "mediaUrl",
+        "mediaType",
+        "createdAt",
+        "senderId",
+        "receiverId",
+        "status"
+      ],
       include: [
         { model: User, as: "Sender", attributes: ["id", "name"] },
         { model: User, as: "Receiver", attributes: ["id", "name"] },
@@ -84,6 +96,16 @@ exports.loadOlderPrivateMessages = async (req, res) => {
     // Try hot table first
     let messages = await PrivateMessage.findAll({
       where: whereCondition,
+      attributes: [
+        "id",
+        "message",
+        "mediaUrl",
+        "mediaType",
+        "createdAt",
+        "senderId",
+        "receiverId",
+        "status"
+      ],
       order: [["createdAt", "DESC"]],
       limit,
     });
@@ -94,6 +116,16 @@ exports.loadOlderPrivateMessages = async (req, res) => {
 
       const archived = await ArchivedPrivateMessage.findAll({
         where: whereCondition,
+        attributes: [
+          "id",
+          "message",
+          "mediaUrl",
+          "mediaType",
+          "createdAt",
+          "senderId",
+          "receiverId",
+          "status"
+        ],
         order: [["createdAt", "DESC"]],
         limit: remaining,
       });

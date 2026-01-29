@@ -75,6 +75,9 @@ let hasMoreMessages = true;
 let isLoadingOlderMessages = false;
 
 let typingTimeout;
+let typingEmitTimeout;
+
+let onlineUserIds = new Set();
 
 
 /* ---------------- HELPERS ---------------- */
@@ -92,7 +95,9 @@ function addMessage(
   showSender = true,
   mediaUrl = null,
   mediaType = null,
-  prepend = false
+  prepend = false,
+  status = "sent",
+  msgId = null
 ) {
   const div = document.createElement("div");
   div.classList.add("message", type);
@@ -125,7 +130,13 @@ function addMessage(
     minute: "2-digit",
   })}
     </div>
-  `;
+
+    ${type === "sent" ? `
+  <div class="receipt ${status}">
+    ${status === "sent" ? "✔" : "✔✔"}
+  </div>
+` : ""}
+`;
 
   if (prepend) {
     chatMessages.prepend(div);
@@ -133,12 +144,15 @@ function addMessage(
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
+
+  if (msgId) div.dataset.messageId = msgId;
 }
 
 /* ai smart suggestions */
 
 messageInput.addEventListener("input", () => {
   clearTimeout(typingTimeout);
+  clearTimeout(typingEmitTimeout);
 
   const text = messageInput.value.trim();
   if (text.length < 3) {
@@ -155,6 +169,24 @@ messageInput.addEventListener("input", () => {
 
     renderPredictions(res.data.suggestions);
   }, 400);
+
+  if (currentRoomId) {
+    socket.emit("typing_start_private", { roomId: currentRoomId });
+  }
+
+  if (currentGroupId) {
+    socket.emit("typing_start_group", { groupId: currentGroupId });
+  }
+
+  typingEmitTimeout = setTimeout(() => {
+    if (currentRoomId) {
+      socket.emit("typing_stop_private", { roomId: currentRoomId });
+    }
+    if (currentGroupId) {
+      socket.emit("typing_stop_group", { groupId: currentGroupId });
+    }
+
+  }, 800);
 });
 
 function renderPredictions(suggestions) {
@@ -221,10 +253,16 @@ function renderUserList(users) {
   userList.innerHTML = "";
 
   users.forEach(user => {
+    const isOnline = onlineUserIds.has(user.id);
+
+
     const div = document.createElement("div");
     div.className = "user-item";
     div.innerHTML = `
-      <div class="user-name">${user.name}</div>
+      <div class="user-name">
+        ${user.name}
+        <span class="status-dot ${isOnline ? "online" : "offline"}"></span>
+      </div>
       <div class="user-email">${user.email || ""}</div>
     `;
     div.onclick = () => joinPersonalChat(user);
@@ -495,12 +533,26 @@ chatForm.addEventListener("submit", async (e) => {
   let mediaUrl = null;
   let mediaType = null;
 
+  const tempId = `temp-${Date.now()}`;
+
+
   if (file) {
     const uploadRes = await uploadMedia(file);
     mediaUrl = uploadRes.url;
     mediaType = uploadRes.type;
 
-    addMessage(null, "You", "sent", now, false, mediaUrl, mediaType);
+    addMessage(
+      null,
+      "You",
+      "sent",
+      now,
+      false,
+      mediaUrl,
+      mediaType,
+      false,
+      "sent",
+      tempId
+    );
     mediaInput.value = "";
   }
 
@@ -518,11 +570,23 @@ chatForm.addEventListener("submit", async (e) => {
       message: message || null,
       mediaUrl,
       mediaType,
+      clientTempId: tempId
     });
   }
 
   if (message) {
-    addMessage(message, "You", "sent", now, false);
+    addMessage(
+      message,
+      "You",
+      "sent",
+      now,
+      false,
+      null,
+      null,
+      false,
+      "sent",
+      tempId
+    );
   }
 
   messageInput.value = "";
@@ -550,13 +614,21 @@ async function loadPrivateMessages(userId) {
       msg.createdAt,
       true,
       msg.mediaUrl,
-      msg.mediaType
+      msg.mediaType,
+      false,
+      msg.status,
+      msg.id
     );
   });
 
   if (messages.length > 0) {
     oldestMessageTime = messages[0].createdAt;
   }
+
+  socket.emit("read_private_messages", {
+    roomId: currentRoomId,
+    senderId: userId
+  });
 }
 
 async function loadGroupMessages(groupId) {
@@ -611,7 +683,9 @@ async function loadOlderPrivateMessages() {
       true,
       msg.mediaUrl,
       msg.mediaType,
-      true // PREPEND
+      true, // PREPEND
+      msg.status,
+      msg.id
     );
   });
 
@@ -674,8 +748,19 @@ chatMessages.addEventListener("scroll", () => {
 
 /* ---------------- SOCKET RECEIVE ---------------- */
 
+socket.on("online_users", (userIds) => {
+  onlineUserIds = new Set(userIds);
+  renderUserList(allUsers.filter(u => u.id !== loggedInUserId));
+});
+
 socket.on("private_message", msg => {
   if (msg.roomId === currentRoomId) {
+
+    socket.emit("read_private_messages", {
+      roomId: currentRoomId,
+      senderId: msg.senderId
+    });
+
     addMessage(
       msg.message,
       msg.senderName,
@@ -683,12 +768,65 @@ socket.on("private_message", msg => {
       msg.createdAt,
       true,
       msg.mediaUrl,
-      msg.mediaType
+      msg.mediaType,
+      false,
+      "sent",
+      msg.id
     );
 
     showSmartReplies(msg.message);
 
   }
+});
+
+socket.on("private_message_self", ({ tempId, id, status }) => {
+  const msgDiv = document.querySelector(
+    `.message[data-message-id="${tempId}"]`
+  );
+  if (!msgDiv) return;
+
+  msgDiv.dataset.messageId = id;
+
+  const receipt = msgDiv.querySelector(".receipt");
+  receipt.className = `receipt ${status}`;
+  receipt.innerText = status === "sent" ? "✔" : "✔✔";
+});
+
+socket.on("typing_private", ({ userName }) => {
+  chatStatus.textContent = `${userName} is typing...`;
+  chatStatus.classList.remove("hidden");
+})
+
+socket.on("stop_typing_private", () => {
+  chatStatus.textContent = currentReceiver
+    ? `Chatting with ${currentReceiver.name}`
+    : "Chat";
+});
+
+socket.on("messages_read", ({ messageIds }) => {
+  messageIds.forEach(id => {
+    const msg = document.querySelector(
+      `.message.sent[data-message-id="${id}"] .receipt`
+    );
+    if (!msg) return;
+
+    msg.classList.remove("delivered");
+    msg.classList.add("read");
+    msg.innerText = "✔✔";
+  });
+});
+
+socket.on("messages_delivered", ({ messageIds }) => {
+  messageIds.forEach(id => {
+    const msg = document.querySelector(
+      `.message[data-message-id="${id}"] .receipt`
+    );
+    if (!msg) return;
+
+    msg.classList.remove("sent");
+    msg.classList.add("delivered");
+    msg.innerText = "✔✔";
+  });
 });
 
 socket.on("group_message", msg => {
@@ -706,6 +844,15 @@ socket.on("group_message", msg => {
     showSmartReplies(msg.message);
 
   }
+});
+
+socket.on("typing_group", ({ userName }) => {
+  chatStatus.textContent = `${userName} is typing...`;
+  chatStatus.classList.remove("hidden");
+});
+
+socket.on("stop_typing_group", () => {
+  chatStatus.classList.add("hidden");
 });
 
 /* ---------------- INIT ---------------- */

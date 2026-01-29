@@ -3,6 +3,8 @@ const socketMiddleware = require("./middleware");
 const personalChatHandler = require("./handlers/personalChat");
 const groupChatHandler = require("./handlers/groupChat");
 
+const onlineUsers = new Map(); // userId -> socket.id
+
 let io;
 
 function init(server) {
@@ -13,6 +15,11 @@ function init(server) {
   io.use(socketMiddleware);
 
   io.on("connection", (socket) => {
+    const userId = socket.user.userId;
+    onlineUsers.set(userId, socket.id);
+
+    io.emit("online_users", Array.from(onlineUsers.keys()));
+
     console.log(
       `User connected: ${socket.user.name} (ID: ${socket.user.userId})`
     );
@@ -21,6 +28,8 @@ function init(server) {
     groupChatHandler(io, socket);
 
     socket.on("disconnect", () => {
+      onlineUsers.delete(userId);
+      io.emit("online-users", Array.from(onlineUsers.keys()));
       console.log(`User disconnected: ${socket.user.name}`);
     });
   });

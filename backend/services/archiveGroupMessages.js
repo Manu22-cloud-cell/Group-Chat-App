@@ -11,7 +11,7 @@ async function archiveOldGroupMessages() {
   try {
     const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    // 1️⃣ Find old group messages
+    // Find old group messages
     const oldMessages = await GroupMessage.findAll({
       where: {
         createdAt: { [Op.lt]: cutoffDate },
@@ -25,7 +25,7 @@ async function archiveOldGroupMessages() {
       return;
     }
 
-    // 2️⃣ Copy to archive table
+    // Copy to archive table
     const archiveData = oldMessages.map(msg => ({
       groupId: msg.groupId,
       senderId: msg.senderId,
@@ -37,7 +37,7 @@ async function archiveOldGroupMessages() {
 
     await ArchivedGroupMessage.bulkCreate(archiveData, { transaction });
 
-    // 3️⃣ Delete from hot table
+    // Delete from hot table
     const ids = oldMessages.map(msg => msg.id);
 
     await GroupMessage.destroy({

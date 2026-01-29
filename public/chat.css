@@ -122,6 +122,22 @@ body {
   color: #666;
 }
 
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: 6px;
+}
+
+.status-dot.online {
+  background: #4caf50;
+}
+
+.status-dot.offline {
+  background: #ccc;
+}
+
 /* ---------------- GROUP LIST ---------------- */
 
 #groupList .user-item {
@@ -229,6 +245,16 @@ body {
 .message.received {
   background: #ffffff;
   margin-right: auto;
+}
+
+.receipt {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.receipt.read {
+  color: #2196f3;
+  opacity: 1;
 }
 
 /* ---------------- CHAT INPUT ---------------- */
